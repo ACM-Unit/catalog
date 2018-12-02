@@ -1,30 +1,17 @@
 package com.autoplus;
 
 import com.autoplus.dbConnection.ConnectionPool;
-import com.autoplus.entity.Socket;
 import com.autoplus.services.CarService;
-import com.autoplus.services.CategoryService;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import javax.sql.DataSource;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.*;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Properties;
 
-public class App extends Thread{
+
+import static com.autoplus.Constants.CACHE_SOCKET;
+
+public class App{
     private static final String ATTRIBUTE_NAME = "config";
     private static DataSource dataSource;
     private static ConnectionPool jdbcObj;
-    public static Socket CACHE_SOCKET = null;
     public static volatile CarService carService;
 
     public static void main(String[] args) {
@@ -33,6 +20,21 @@ public class App extends Thread{
             dataSource = jdbcObj.setUpPool();
             jdbcObj.printDbStatus();
             carService = new CarService(dataSource);
+            Thread t = new Thread(() -> {
+                while(true){
+                    try {
+                        Thread.sleep(120*1000);
+                        CACHE_SOCKET = carService.getRandomProxy();
+                        System.out.println("change socket: " + CACHE_SOCKET.getIp()+":"+CACHE_SOCKET.getPort());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            t.setDaemon(true);
+            t.start();
             carService.getAllCars();
         } catch (IOException e) {
             e.printStackTrace();
@@ -41,18 +43,4 @@ public class App extends Thread{
         }
     }
 
-    @Override
-    public void run() {
-        while(true){
-            try {
-                sleep(120*1000);
-                CACHE_SOCKET = carService.getRandomProxy();
-                System.out.println("change socket: " + CACHE_SOCKET);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

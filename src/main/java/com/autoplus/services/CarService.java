@@ -23,12 +23,11 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
+
 
 public class CarService implements IService {
     private String SITE;
     private String RESOURCES = "prop.properties";
-    private String CARS;
     private String ALLCARS;
     private String CARMODELS;
     private String CARTYPE;
@@ -50,7 +49,6 @@ public class CarService implements IService {
             prop.load(resourceStream);
         }
         SITE = prop.getProperty("site");
-        CARS = prop.getProperty("car-xpath");
         ALLCARS = prop.getProperty("all-car-xpath");
         CARMODELS = prop.getProperty("carmodels-xpath");
         CARTYPE = prop.getProperty("carmodify-xpath");
@@ -68,15 +66,18 @@ public class CarService implements IService {
         temp = new Car(null, null, null, "/cars/");
         xpath = new ArrayList<>();
         method = new ArrayList<>();
+        setProxies();
     }
 
 
     public void saveImage(String source, String dist) throws IOException, InterruptedException {
-        URL url = new URL(source);
-        Image img = ImageIO.read(getStream(url).getInputStream());
-        BufferedImage bi = (BufferedImage) img;
-        File f = new File(dist);
-        ImageIO.write(bi, "png", f);
+        if(source.toUpperCase().contains("HTTP")) {
+            URL url = new URL(source);
+            Image img = ImageIO.read(getStream(url));
+            BufferedImage bi = (BufferedImage) img;
+            File f = new File(dist);
+            ImageIO.write(bi, "png", f);
+        }
     }
 
 
@@ -129,7 +130,7 @@ public class CarService implements IService {
     public boolean getModels(Element e) {
         String model = e.text();
         System.out.println("+"+model);
-        if ((!existsModels.contains(model) && !existCars.contains(temp.getBrand())) || (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()))) {
+        if (!existCars.contains(temp.getBrand()) || (last.getBrand().equals(temp.getBrand()) && (!existsModels.contains(model) || last.getModel().equals(temp.getModel())))) {
             new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + model.replace("/", "")).mkdir();
             temp.setModel(model);
             temp.setReference(e.attr("href"));
@@ -141,9 +142,11 @@ public class CarService implements IService {
 
     public boolean getType(Element e) {
         String type = e.select("> div").text();
+        System.out.println("+++++"+e.select("> div > span").text());
+        System.out.println("+++++"+type.replace(e.select("> div > span").text(), ""));
         System.out.println("++"+type);
-        if ((!existsTypes.contains(type) && !existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
-                (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && !last.getModel().equals(temp.getModel()))) {
+        if ((!existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
+                (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getModel().equals(temp.getModel())))) {
             String imageCar = e.select("> div:eq(0) > img").attr("src");
             temp.setType(type);
             temp.setReference(e.attr("href"));

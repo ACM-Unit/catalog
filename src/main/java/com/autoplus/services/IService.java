@@ -2,8 +2,6 @@ package com.autoplus.services;
 
 import com.autoplus.App;
 import com.autoplus.entity.Socket;
-import org.apache.commons.io.FileUtils;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,6 +10,9 @@ import org.jsoup.select.Elements;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import static com.autoplus.Constants.CACHE_SOCKET;
+import static com.autoplus.Constants.SOCKETS;
 
 public interface IService {
     /*    String ip = "50.242.47.41";
@@ -23,46 +24,45 @@ public interface IService {
 
 
     default com.autoplus.entity.Socket getSocket() throws IOException {
-        if (App.CACHE_SOCKET == null) {
-            App.CACHE_SOCKET = getRandomProxy();
+        if (CACHE_SOCKET == null) {
+            CACHE_SOCKET = getRandomProxy();
         }
-        return App.CACHE_SOCKET;
+        return CACHE_SOCKET;
 
     }
 
-    default com.autoplus.entity.Socket getRandomProxy() throws IOException {
-        Map<String, Integer> map = new HashMap<>();
+    default void setProxies()throws IOException {
+        List<Socket> set = new ArrayList<>();
         Document doc = Jsoup.parse(String.valueOf(getHTML("test.html")));
         Elements ips = doc.select(IPs);
         System.out.println(ips.size());
         for (Element sc : ips) {
-            map.put(sc.select("td:eq(0)").text(), Integer.valueOf(sc.select("td:eq(1)").text()));
+            set.add(new Socket(sc.select("td:eq(0)").text(), Integer.valueOf(sc.select("td:eq(1)").text())));
             //System.out.println(sc.select("td:eq(0)").text()+":"+sc.select("td:eq(1)").text());
         }
+        SOCKETS = set;
+    }
+
+    default Socket getRandomProxy() throws IOException {
         Random random = new Random();
-        List<String> keys = new ArrayList<String>(map.keySet());
-        String ip = keys.get(random.nextInt(keys.size()));
-        Integer port = map.get(ip);
-        App.CACHE_SOCKET = new com.autoplus.entity.Socket(ip, port);
-        return new Socket(ip, port);
+        CACHE_SOCKET = SOCKETS.get(random.nextInt(SOCKETS.size()));
+        return CACHE_SOCKET;
     }
 
     default StringBuffer getHTML(URL url) throws IOException, InterruptedException {
-        HttpURLConnection uc = getStream(url);
         String line = null;
         StringBuffer tmp = new StringBuffer();
         System.out.println("============>" + url);
-        BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(getStream(url)));
         while ((line = in.readLine()) != null) {
             tmp.append(line);
         }
         return tmp;
     }
 
-    default HttpURLConnection getStream(URL url) throws IOException, InterruptedException {
-        com.autoplus.entity.Socket s = getSocket();
+    default InputStream getStream(URL url) throws IOException, InterruptedException {
+        Socket s = getSocket();
         int count = 0;
-        boolean status = true;
         HttpURLConnection uc = null;
         while (count < 3) {
             Thread.sleep(2000);
@@ -72,14 +72,15 @@ public interface IService {
                 uc.setRequestProperty("Cookie", "catalog_page_size=50");
                 uc.connect();
                 System.out.println("connect " + s.getIp() + ":" + s.getPort());
-                return uc;
+                return uc.getInputStream();
             } catch (IOException e) {
                 System.out.println("exception " + s.getIp() + ":" + s.getPort());
                 e.printStackTrace();
                 count++;
             }
-            if(count == 3){
-                App.CACHE_SOCKET = getRandomProxy();
+            if (count == 3) {
+                SOCKETS.remove(CACHE_SOCKET);
+                CACHE_SOCKET = getRandomProxy();
             }
         }
         return getStream(url);
