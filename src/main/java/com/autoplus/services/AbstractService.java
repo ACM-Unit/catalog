@@ -14,7 +14,7 @@ import java.util.*;
 import static com.autoplus.Constants.CACHE_SOCKET;
 import static com.autoplus.Constants.SOCKETS;
 
-public interface IService {
+public abstract class AbstractService {
     /*    String ip = "50.242.47.41";
         int port = 31341;*/
     String PROXIES1 = "https://hidemyna.me/en/proxy-list/?ports=8080&type=h#list";
@@ -23,7 +23,7 @@ public interface IService {
     String IPs1 = "#content-section > section:eq(0) > div > table > tbody > tr";
 
 
-    default com.autoplus.entity.Socket getSocket() throws IOException {
+    public Socket getSocket() throws IOException {
         if (CACHE_SOCKET == null) {
             CACHE_SOCKET = getRandomProxy();
         }
@@ -31,7 +31,7 @@ public interface IService {
 
     }
 
-    default void setProxies()throws IOException {
+    public void setProxies()throws IOException {
         List<Socket> set = new ArrayList<>();
         Document doc = Jsoup.parse(String.valueOf(getHTML("test.html")));
         Elements ips = doc.select(IPs);
@@ -43,13 +43,13 @@ public interface IService {
         SOCKETS = set;
     }
 
-    default Socket getRandomProxy() throws IOException {
+    public Socket getRandomProxy() throws IOException {
         Random random = new Random();
         CACHE_SOCKET = SOCKETS.get(random.nextInt(SOCKETS.size()));
         return CACHE_SOCKET;
     }
 
-    default StringBuffer getHTML(URL url) throws IOException, InterruptedException {
+    public StringBuffer getHTML(URL url) throws IOException, InterruptedException {
         String line = null;
         StringBuffer tmp = new StringBuffer();
         System.out.println("============>" + url);
@@ -60,7 +60,7 @@ public interface IService {
         return tmp;
     }
 
-    default InputStream getStream(URL url) throws IOException, InterruptedException {
+    public InputStream getStream(URL url) throws IOException, InterruptedException {
         Socket s = getSocket();
         int count = 0;
         HttpURLConnection uc = null;
@@ -86,7 +86,7 @@ public interface IService {
         return getStream(url);
     }
 
-    default StringBuffer getHTML(String html) throws IOException {
+    public StringBuffer getHTML(String html) throws IOException {
         String line = null;
         StringBuffer tmp = new StringBuffer();
         ClassLoader classLoader = getClass().getClassLoader();

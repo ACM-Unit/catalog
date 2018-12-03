@@ -11,7 +11,7 @@ public class Modification {
     private String date;
     private String reference;
 
-    public Modification(Car parent, String name, String engineType, String engineModel, String engineCapacity, String power, String drive, String date, String Reference) {
+    public Modification(Car parent, String name, String engineType, String engineModel, String engineCapacity, String power, String drive, String date, String reference) {
         this.parent = parent;
         this.name = name;
         this.engineType = engineType;

@@ -73,4 +73,14 @@ public class CategoryDao implements Dao<Category> {
     public List<String> getLastTypes(Category category) {
         return null;
     }
+
+    @Override
+    public List<String> getLastModification(int parent) {
+        return null;
+    }
+
+    @Override
+    public Category getOne(String brand, String model, String type) {
+        return null;
+    }
 }

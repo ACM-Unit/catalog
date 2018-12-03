@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class CategoryService implements IService {
+public class CategoryService extends AbstractService {
     private String SITE;
     private String CATEGORIES;
     private String SUBCATEGORIES1;

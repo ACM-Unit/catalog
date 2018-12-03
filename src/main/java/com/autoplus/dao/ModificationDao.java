@@ -2,12 +2,10 @@ package com.autoplus.dao;
 
 import com.autoplus.entity.Car;
 import com.autoplus.entity.Modification;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +35,7 @@ public class ModificationDao implements Dao<Modification> {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Car car = new Car(rs.getString("c.brand"), rs.getString("c.model"), rs.getString("c.type"), rs.getString("c.reference"), rs.getString("c.year"));
-                Modification modification = new Modification(car, rs.getString("m.name"), rs.getString("m.enginetype"), rs.getString("m.enginemodel"), rs.getString("m.enginecapacity"), rs.getString("m.power"), rs.getString("m.drive"), rs.getString("m.date"));
+                Modification modification = new Modification(car, rs.getString("m.name"), rs.getString("m.enginetype"), rs.getString("m.enginemodel"), rs.getString("m.enginecapacity"), rs.getString("m.power"), rs.getString("m.drive"), rs.getString("m.date"), rs.getString("m.reference"));
                 modifications.add(modification);
             }
         } catch (SQLException e) {
@@ -50,7 +48,32 @@ public class ModificationDao implements Dao<Modification> {
 
     @Override
     public Modification save(Modification modification) {
-        return null;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("INSERT INTO autoplus.modification (parent, name, enginetype, enginemodel, enginecapacity, power, drive, date, reference) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            ps.setInt(1, modification.getParent().getId());
+            ps.setString(2, modification.getName());
+            ps.setString(3, modification.getEngineType());
+            ps.setString(4, modification.getEngineModel());
+            ps.setString(5, modification.getEngineCapacity());
+            ps.setString(6, modification.getPower());
+            ps.setString(7, modification.getDrive());
+            ps.setString(8, modification.getDate());
+            ps.setString(9, modification.getReference());
+            ps.executeUpdate();
+
+        }
+        catch (MySQLIntegrityConstraintViolationException e) {
+            System.out.println("dublicate");
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(connection, null, null);
+        }
+        return modification;
     }
 
     @Override
@@ -89,7 +112,7 @@ public class ModificationDao implements Dao<Modification> {
         List<String> list = new ArrayList<>();
         try {
             connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement("SELECT * FROM modification WHERE parent = ?");
+            PreparedStatement ps = connection.prepareStatement("SELECT name FROM modification WHERE parent = ?");
             ps.setInt(1, parent);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -102,5 +125,10 @@ public class ModificationDao implements Dao<Modification> {
             close(connection, null, null);
         }
         return list;
+    }
+
+    @Override
+    public Modification getOne(String brand, String model, String type) {
+        return null;
     }
 }

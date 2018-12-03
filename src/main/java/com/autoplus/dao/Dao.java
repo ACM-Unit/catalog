@@ -1,5 +1,7 @@
 package com.autoplus.dao;
 
+import com.autoplus.entity.Car;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,4 +41,5 @@ public interface Dao<T> {
     List<String> getLastModels(T t);
     List<String> getLastTypes(T t);
     List<String> getLastModification(int parent);
+    T getOne(String brand, String model, String type);
 }

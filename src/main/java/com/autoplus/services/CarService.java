@@ -2,7 +2,9 @@ package com.autoplus.services;
 
 import com.autoplus.dao.CarDao;
 import com.autoplus.dao.Dao;
+import com.autoplus.dao.ModificationDao;
 import com.autoplus.entity.Car;
+import com.autoplus.entity.Modification;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,13 +25,15 @@ import java.util.Properties;
 import java.util.function.Function;
 
 
-public class CarService implements IService {
+public class CarService extends AbstractService {
     private String SITE;
     private String RESOURCES = "prop.properties";
     private String ALLCARS;
     private String CARMODELS;
     private String CARTYPE;
+    private String MODIFICATION;
     private Dao dao;
+    private Dao moddao;
     private Car temp;
     private List<String> xpath;
     private List<Function<Element, Boolean>> method;
@@ -37,6 +41,7 @@ public class CarService implements IService {
     private List<String> existCars;
     private List<String> existsModels;
     private List<String> existsTypes;
+    private List<String> existModification;
     private List<List<String>> exists;
 
 
@@ -49,14 +54,21 @@ public class CarService implements IService {
         SITE = prop.getProperty("site");
         ALLCARS = prop.getProperty("all-car-xpath");
         CARMODELS = prop.getProperty("carmodels-xpath");
-        CARTYPE = prop.getProperty("carmodify-xpath");
+        CARTYPE = prop.getProperty("cartype-xpath");
+        MODIFICATION = prop.getProperty("modification-xpath");
         dao = new CarDao(ds);
+        moddao = new ModificationDao(ds);
         last = (Car) dao.getLastObject();
         List<Car> cars = dao.getAll();
         existCars = new ArrayList<>();
         cars.forEach(c -> existCars.add(c.getBrand()));
-        existsModels = dao.getLastModels(last);
-        existsTypes = dao.getLastTypes(last);
+        if(last!=null) {
+            existsModels = dao.getLastModels(last);
+            existsTypes = dao.getLastTypes(last);
+        }else{
+            existsModels = new ArrayList<>();
+            existsTypes = new ArrayList<>();
+        }
         exists = new ArrayList<>();
         exists.add(existCars);
         exists.add(existsModels);
@@ -64,18 +76,21 @@ public class CarService implements IService {
         temp = new Car(null, null, null, "/cars/", null);
         xpath = new ArrayList<>();
         method = new ArrayList<>();
+        existModification = new ArrayList<>();
         setProxies();
     }
 
 
     public void saveImage(String source, String dist) throws IOException, InterruptedException {
-        if(source.toUpperCase().contains("HTTP")) {
-            URL url = new URL(source);
-            Image img = ImageIO.read(getStream(url));
-            BufferedImage bi = (BufferedImage) img;
-            File f = new File(dist);
-            ImageIO.write(bi, "png", f);
+        if (!source.toUpperCase().contains("HTTP")) {
+            source = SITE + source;
         }
+        URL url = new URL(source);
+        Image img = ImageIO.read(getStream(url));
+        BufferedImage bi = (BufferedImage) img;
+        File f = new File(dist);
+        ImageIO.write(bi, "png", f);
+
     }
 
 
@@ -83,9 +98,11 @@ public class CarService implements IService {
         xpath.add(ALLCARS);
         xpath.add(CARMODELS);
         xpath.add(CARTYPE);
+        xpath.add(MODIFICATION);
         method.add((e) -> getBrands(e));
         method.add((e) -> getModels(e));
         method.add((e) -> getType(e));
+        method.add((e) -> getModification(e));
         getAll(0);
     }
 
@@ -127,7 +144,7 @@ public class CarService implements IService {
 
     public boolean getModels(Element e) {
         String model = e.text();
-        System.out.println("+"+model);
+        System.out.println("+" + model);
         if (!existCars.contains(temp.getBrand()) || (last.getBrand().equals(temp.getBrand()) && (!existsModels.contains(model) || last.getModel().equals(temp.getModel())))) {
             new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + model.replace("/", "")).mkdir();
             temp.setModel(model);
@@ -141,13 +158,14 @@ public class CarService implements IService {
     public boolean getType(Element e) {
         String year = e.select("> div > span").text();
         String type = e.select("> div").text().replace(e.select("> div > span").text(), "");
-        System.out.println("++"+type);
-        System.out.println("++"+year);
+        System.out.println("++" + type);
+        System.out.println("++" + year);
         if ((!existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
                 (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getModel().equals(temp.getModel())))) {
             String imageCar = e.select("> div:eq(0) > img").attr("src");
             temp.setType(type);
             temp.setReference(e.attr("href"));
+            temp.setYear(year);
             if (!"/static/images/nocars.png".equals(imageCar) && !imageCar.isEmpty()) {
                 try {
                     saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
@@ -170,34 +188,23 @@ public class CarService implements IService {
         }
         return false;
     }
-
     public boolean getModification(Element e) {
-        String year = e.select("> div > span").text();
-        System.out.println("++"+type);
-        System.out.println("++"+year);
-        if ((!existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
-                (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getModel().equals(temp.getModel())))) {
-            String imageCar = e.select("> div:eq(0) > img").attr("src");
-            temp.setType(type);
-            temp.setReference(e.attr("href"));
-            if (!"/static/images/nocars.png".equals(imageCar) && !imageCar.isEmpty()) {
-                try {
-                    saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
-                } catch (FileNotFoundException ex) {
-                    try {
-                        saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-            }
-            dao.save(temp);
+        String name = e.select("> td:eq(0)").text();
+        String engineType = e.select("> td:eq(1)").text();
+        String engineModel = e.select("> td:eq(2)").text();
+        String engineCapacity = e.select("> td:eq(3)").text();
+        String power = e.select("> td:eq(4)").text();
+        String drive = e.select("> td:eq(5)").text();
+        String date = e.select("> td:eq(6)").text();
+        String reference = e.attr("data-slug");
+        Car tempCar = (Car) dao.getOne(temp.getBrand(), temp.getModel(), temp.getType());
+        if (tempCar.equals(last)) {
+            existModification = moddao.getLastModification(last.getId());
+        } else {
+            existModification = new ArrayList<>();
+        }
+        if (!existModification.contains(name)) {
+            moddao.save(new Modification(tempCar, name, engineType, engineModel, engineCapacity, power, drive, date, reference));
             return true;
         }
         return false;

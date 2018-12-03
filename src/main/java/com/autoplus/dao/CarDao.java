@@ -19,6 +19,29 @@ public class CarDao implements Dao<Car> {
     public Car get(long id) {
         return null;
     }
+    @Override
+    public Car getOne(String brand, String model, String type) {
+        Connection connection = null;
+        Car car =null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("select * from car where brand = ? and model = ? and type = ?");
+            ps.setString(1, brand);
+            ps.setString(2, model);
+            ps.setString(3, type);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                car = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"), rs.getString("year"));
+                car.setId(rs.getInt("id"));
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(connection, null, null);
+        }
+        return car;
+    }
 
     @Override
     public List<Car> getAll() {
@@ -117,12 +140,14 @@ public class CarDao implements Dao<Car> {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 lastCar = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"), rs.getString("year"));
+                lastCar.setId(rs.getInt("id"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
             close(connection, null, null);
         }
+        System.out.println(lastCar);
         return lastCar;
     }
     @Override
