@@ -26,23 +26,7 @@ import java.util.function.Function;
 
 
 public class CarService extends AbstractService {
-    private String SITE;
-    private String RESOURCES = "prop.properties";
-    private String ALLCARS;
-    private String CARMODELS;
-    private String CARTYPE;
-    private String MODIFICATION;
-    private Dao dao;
-    private Dao moddao;
-    private Car temp;
-    private List<String> xpath;
-    private List<Function<Element, Boolean>> method;
-    private Car last;
-    private List<String> existCars;
-    private List<String> existsModels;
-    private List<String> existsTypes;
-    private List<String> existModification;
-    private List<List<String>> exists;
+
 
 
     public CarService(DataSource ds) throws IOException {
@@ -107,19 +91,7 @@ public class CarService extends AbstractService {
     }
 
 
-    public void getAll(int idx) throws IOException, InterruptedException {
-        Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + temp.getReference()))));
-        Elements elements = doc.select(xpath.get(idx));
-        if (elements.isEmpty()) {
-            dao.save(new Car(temp));
-        } else {
-            for (int i = 0; i < elements.size(); i++) {
-                Element e = elements.get(i);
-                boolean b = method.get(idx).apply(e);
-                if (idx < xpath.size() - 1 && b) getAll(idx + 1);
-            }
-        }
-    }
+
 
     public boolean getBrands(Element e) {
         String brand = e.select("> span").text();
@@ -144,9 +116,9 @@ public class CarService extends AbstractService {
 
     public boolean getModels(Element e) {
         String model = e.text();
-        System.out.println("+" + model);
-        if (!existCars.contains(temp.getBrand()) || (last.getBrand().equals(temp.getBrand()) && (!existsModels.contains(model) || last.getModel().equals(temp.getModel())))) {
+        if (!existCars.contains(temp.getBrand()) || (last.getBrand().equals(temp.getBrand()) && (!existsModels.contains(model) || last.getModel().equals(model)))) {
             new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + model.replace("/", "")).mkdir();
+            System.out.println("+" + model);
             temp.setModel(model);
             temp.setReference(e.attr("href"));
             temp.setType(null);
@@ -160,8 +132,8 @@ public class CarService extends AbstractService {
         String type = e.select("> div").text().replace(e.select("> div > span").text(), "");
         System.out.println("++" + type);
         System.out.println("++" + year);
-        if ((!existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
-                (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getModel().equals(temp.getModel())))) {
+        if ((!existsModels.contains(temp.getModel()) && (!existCars.contains(temp.getBrand()) || temp.getBrand().equals(last.getBrand()))) ||
+                (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getType().equals(type)))) {
             String imageCar = e.select("> div:eq(0) > img").attr("src");
             temp.setType(type);
             temp.setReference(e.attr("href"));
@@ -198,12 +170,13 @@ public class CarService extends AbstractService {
         String date = e.select("> td:eq(6)").text();
         String reference = e.attr("data-slug");
         Car tempCar = (Car) dao.getOne(temp.getBrand(), temp.getModel(), temp.getType());
-        if (tempCar.equals(last)) {
+        if (last.equals(tempCar)) {
             existModification = moddao.getLastModification(last.getId());
         } else {
             existModification = new ArrayList<>();
         }
         if (!existModification.contains(name)) {
+            System.out.println("+++"+tempCar +", " + name +", " + engineType +", " + engineModel +", " + engineCapacity +", " + power +", " + drive +", " + date +", " + reference);
             moddao.save(new Modification(tempCar, name, engineType, engineModel, engineCapacity, power, drive, date, reference));
             return true;
         }

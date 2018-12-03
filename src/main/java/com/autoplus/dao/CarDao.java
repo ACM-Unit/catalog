@@ -24,11 +24,17 @@ public class CarDao implements Dao<Car> {
         Connection connection = null;
         Car car =null;
         try {
+            String query;
+            if(type==null){
+                query = "select * from car where brand = ? and model = ? and type is null";
+            }else{
+                query = "select * from car where brand = ? and model = ? and type = ?";
+            }
             connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement("select * from car where brand = ? and model = ? and type = ?");
+            PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, brand);
             ps.setString(2, model);
-            ps.setString(3, type);
+            if(type!=null) ps.setString(3, type);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 car = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"), rs.getString("year"));

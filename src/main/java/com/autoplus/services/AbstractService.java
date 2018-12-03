@@ -1,6 +1,8 @@
 package com.autoplus.services;
 
 import com.autoplus.App;
+import com.autoplus.dao.Dao;
+import com.autoplus.entity.Car;
 import com.autoplus.entity.Socket;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,17 +12,31 @@ import org.jsoup.select.Elements;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.function.Function;
 
 import static com.autoplus.Constants.CACHE_SOCKET;
 import static com.autoplus.Constants.SOCKETS;
 
 public abstract class AbstractService {
-    /*    String ip = "50.242.47.41";
-        int port = 31341;*/
-    String PROXIES1 = "https://hidemyna.me/en/proxy-list/?ports=8080&type=h#list";
-    String PROXIES = "https://free-proxy-list.net/anonymous-proxy.html";
+    protected String SITE;
+    protected String RESOURCES = "prop.properties";
+    protected String ALLCARS;
+    protected String CARMODELS;
+    protected String CARTYPE;
+    protected String MODIFICATION;
+    protected Dao dao;
+    protected Dao moddao;
+    protected Car temp;
+    protected List<String> xpath;
+    protected List<Function<Element, Boolean>> method;
+    protected Car last;
+    protected List<String> existCars;
+    protected List<String> existsModels;
+    protected List<String> existsTypes;
+    protected List<String> existModification;
+    protected List<List<String>> exists;
     String IPs = "table > tbody > tr";
-    String IPs1 = "#content-section > section:eq(0) > div > table > tbody > tr";
+
 
 
     public Socket getSocket() throws IOException {
@@ -97,6 +113,21 @@ public abstract class AbstractService {
             tmp.append(line);
         }
         return tmp;
+    }
+
+    public void getAll(int idx) throws IOException, InterruptedException {
+        Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + temp.getReference()))));
+        Elements elements = doc.select(xpath.get(idx));
+        if (elements.isEmpty()) {
+            dao.save(new Car(temp));
+            if (idx < xpath.size() - 1) getAll(idx + 1);
+        } else {
+            for (int i = 0; i < elements.size(); i++) {
+                Element e = elements.get(i);
+                boolean b = method.get(idx).apply(e);
+                if (idx < xpath.size() - 1 && b) getAll(idx + 1);
+            }
+        }
     }
 
 }
