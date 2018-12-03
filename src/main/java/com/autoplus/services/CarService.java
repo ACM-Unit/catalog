@@ -3,9 +3,6 @@ package com.autoplus.services;
 import com.autoplus.dao.CarDao;
 import com.autoplus.dao.Dao;
 import com.autoplus.entity.Car;
-import com.autoplus.entity.Category;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,8 +17,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.function.Function;
 
 
@@ -63,7 +61,7 @@ public class CarService implements IService {
         exists.add(existCars);
         exists.add(existsModels);
         exists.add(existsTypes);
-        temp = new Car(null, null, null, "/cars/");
+        temp = new Car(null, null, null, "/cars/", null);
         xpath = new ArrayList<>();
         method = new ArrayList<>();
         setProxies();
@@ -141,10 +139,42 @@ public class CarService implements IService {
     }
 
     public boolean getType(Element e) {
-        String type = e.select("> div").text();
-        System.out.println("+++++"+e.select("> div > span").text());
-        System.out.println("+++++"+type.replace(e.select("> div > span").text(), ""));
+        String year = e.select("> div > span").text();
+        String type = e.select("> div").text().replace(e.select("> div > span").text(), "");
         System.out.println("++"+type);
+        System.out.println("++"+year);
+        if ((!existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
+                (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getModel().equals(temp.getModel())))) {
+            String imageCar = e.select("> div:eq(0) > img").attr("src");
+            temp.setType(type);
+            temp.setReference(e.attr("href"));
+            if (!"/static/images/nocars.png".equals(imageCar) && !imageCar.isEmpty()) {
+                try {
+                    saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
+                } catch (FileNotFoundException ex) {
+                    try {
+                        saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            dao.save(temp);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean getModification(Element e) {
+        String year = e.select("> div > span").text();
+        System.out.println("++"+type);
+        System.out.println("++"+year);
         if ((!existsModels.contains(temp.getModel()) && !existCars.contains(temp.getBrand())) ||
                 (last.getBrand().equals(temp.getBrand()) && last.getModel().equals(temp.getModel()) && (!existsTypes.contains(type) || last.getModel().equals(temp.getModel())))) {
             String imageCar = e.select("> div:eq(0) > img").attr("src");

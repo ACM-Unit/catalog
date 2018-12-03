@@ -29,7 +29,7 @@ public class CarDao implements Dao<Car> {
             PreparedStatement ps = connection.prepareStatement("select * from car");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Car car = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"));
+                Car car = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"), rs.getString("year"));
                 cars.add(car);
             }
         } catch (SQLException e) {
@@ -45,12 +45,13 @@ public class CarDao implements Dao<Car> {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement("INSERT INTO autoplus.car (id, brand, model, type, reference, image) VALUES (NULL, ?, ?, ?, ?, null)",
+            PreparedStatement ps = connection.prepareStatement("INSERT INTO autoplus.car (id, brand, model, type, reference, year) VALUES (NULL, ?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, car.getBrand());
             ps.setString(2, car.getModel());
             ps.setString(3, car.getType());
             ps.setString(4, car.getReference());
+            ps.setString(5, car.getYear());
             int i = ps.executeUpdate();
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
@@ -115,7 +116,7 @@ public class CarDao implements Dao<Car> {
             PreparedStatement ps = connection.prepareStatement("SELECT * FROM car ORDER BY id DESC LIMIT 1;");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                lastCar = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"));
+                lastCar = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"), rs.getString("year"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -165,5 +166,10 @@ public class CarDao implements Dao<Car> {
             close(connection, null, null);
         }
         return list;
+    }
+
+    @Override
+    public List<String> getLastModification(int parent) {
+        return null;
     }
 }

@@ -38,4 +38,5 @@ public interface Dao<T> {
     T getLastObject();
     List<String> getLastModels(T t);
     List<String> getLastTypes(T t);
+    List<String> getLastModification(int parent);
 }
