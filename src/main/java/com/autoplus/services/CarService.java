@@ -5,6 +5,7 @@ import com.autoplus.dao.ModificationDao;
 import com.autoplus.entity.Car;
 import com.autoplus.entity.Modification;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Properties;
 
 
-public class CarService extends AbstractService {
+public class CarService extends AbstractService<Car> {
 
 
 
@@ -121,11 +122,9 @@ public class CarService extends AbstractService {
             temp.setReference(e.attr("href"));
             temp.setYear(year);
             if (!"/static/images/nocars.png".equals(imageCar) && !imageCar.isEmpty()) {
-                try {
-                    saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
+                try (InputStream in1 = saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + e.select("> div:eq(1)").text().replace("/", "") + ".png")){
                 } catch (FileNotFoundException ex) {
-                    try {
-                        saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + e.select("> div:eq(1)").text().replace("/", "") + ".png");
+                    try (InputStream in = saveImage(imageCar.contains("http") ? imageCar : SITE + imageCar, "C:/app/carmodels/" + e.select("> div:eq(1)").text().replace("/", "") + ".png")){
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     } catch (InterruptedException e1) {
@@ -166,6 +165,28 @@ public class CarService extends AbstractService {
             return true;
         }
         return false;
+    }
+    public void getModImage(){
+        if(!new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "")+"/"+ temp.getModel().replace("/", "") + ".png").exists()) {
+            Elements elements = currentDoc.select(MOD_IMAGE);
+            String imageMod = elements.attr("src");
+            System.out.println("================>inside   " + imageMod);
+            if (!"/static/images/nocars.png".equals(imageMod) && !imageMod.isEmpty()) {
+                try (InputStream in = saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + temp.getModel().replace("/", "") + ".png")){
+                } catch (FileNotFoundException ex) {
+                    try (InputStream in2 = saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getModel().replace("/", "") + ".png")){
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
     }
 }
 

@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class Category {
+public class Category implements Entity {
     private int id;
     private String title;
-    private String url;
     private Category parent;
-    private List<Category> subcategories = new ArrayList<>();
+    private String reference;
 
-    public Category(String title, String url, Category parent) {
+    public Category(String title, String reference, Category parent) {
         this.title = title;
-        this.url = url;
+        this.reference = reference;
         this.parent = parent;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
     }
 
     public int getId() {
@@ -33,25 +36,6 @@ public class Category {
         this.title = title;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public List<Category> getSubcategories() {
-        return subcategories;
-    }
-
-    public void setSubcategories(List<Category> subcategories) {
-        this.subcategories = subcategories;
-        for (Category c: subcategories) {
-            c.setParent(this);
-        }
-    }
-
     public Category getParent() {
         return parent;
     }
@@ -67,14 +51,17 @@ public class Category {
         Category category = (Category) o;
         return id == category.id &&
                 Objects.equals(title, category.title) &&
-                Objects.equals(url, category.url) &&
-                Objects.equals(parent, category.parent) &&
-                Objects.equals(subcategories, category.subcategories);
+                Objects.equals(parent, category.parent);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(id, title, url, parent, subcategories);
+        return Objects.hash(id, title, reference, parent);
+    }
+
+    @Override
+    public String getReference() {
+        return this.reference;
     }
 }

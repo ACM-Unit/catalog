@@ -15,11 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class CategoryService extends AbstractService {
+public class CategoryService extends AbstractService<Category> {
     private String SITE;
     private String CATEGORIES;
-    private String SUBCATEGORIES1;
-    private String SUBCATEGORIES2;
+    private String SUBCATEGORIES;
     private String RESOURCES = "prop.properties";
     private Dao dao;
 
@@ -31,40 +30,30 @@ public class CategoryService extends AbstractService {
         }
         SITE = prop.getProperty("site");
         CATEGORIES = prop.getProperty("categry-xpath");
-        SUBCATEGORIES1 = prop.getProperty("subcategory-xpath1");
-        SUBCATEGORIES2 = prop.getProperty("subcategory-xpath2");
+        SUBCATEGORIES = prop.getProperty("subcategory-xpath");
+        ;
         dao = new CategoryDao(ds);
     }
 
-    public List<Category> getCategories(String ip, int port) throws IOException, InterruptedException {
-        List<Category> categories = new ArrayList<>();
-        Document document = Jsoup.parse(String.valueOf(getHTML(new URL(SITE))));
-        for (Element e : document.select(CATEGORIES)) {
-            if (!e.select("> div > a").attr("href").isEmpty()) {
-                System.out.println(e.select("> div > a").text());
-                System.out.println(SITE + e.select("> div > a").attr("href"));
-                Category c = new Category(e.select("> div > a").text(), SITE + e.select("> div > a").attr("href"), null);
-                for (Element se : e.select(SUBCATEGORIES1)) {
-                    if (!se.attr("href").isEmpty()) {
-                        System.out.println("-" + se.text());
-                        System.out.println("-" + SITE + se.attr("href"));
-                        Category sc = new Category(se.text(), SITE + se.attr("href"), null);
-                        sc.setSubcategories(getSubCategories(SITE + se.attr("href"), "--", ip, port));
-                        c.getSubcategories().add(sc);
-                    }
-                }
-                categories.add(c);
+    public boolean getCategories(Element e) throws IOException, InterruptedException {
+        if (!e.attr("href").isEmpty()) {
+            System.out.println(e.select("> div > a").text());
+            System.out.println(SITE + e.select("> div > a").attr("href"));
+            Category c = new Category(e.text(), SITE + e.attr("href"), temp.getParent());
+            if (!exists.contains(c.getTitle())) {
+                temp = (Category) dao.save(c);
+                return true;
             }
         }
-        return categories;
+        return false;
     }
 
-    public List<Category> getSubCategories(String url, String line,String ip, int port) {
+    public List<Category> getSubCategories(String url, String line, String ip, int port) {
         List<Category> categories = new ArrayList<>();
         try {
             Thread.sleep(2000);
             Document document = Jsoup.parse(String.valueOf(getHTML(new URL(url))));
-            for (Element e : document.select(SUBCATEGORIES2)) {
+            for (Element e : document.select(SUBCATEGORIES)) {
                 if (!e.attr("href").isEmpty()) {
                     System.out.println(line + e.select(".info > strong").text());
                     System.out.println(line + SITE + e.attr("href"));

@@ -2,6 +2,7 @@ package com.autoplus.services;
 
 import com.autoplus.dao.Dao;
 import com.autoplus.entity.Car;
+import com.autoplus.entity.Entity;
 import com.autoplus.entity.Socket;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,7 +22,7 @@ import java.util.function.Function;
 import static com.autoplus.Constants.CACHE_SOCKET;
 import static com.autoplus.Constants.SOCKETS;
 
-public abstract class AbstractService {
+public abstract class AbstractService<T extends Entity> {
     protected String SITE;
     protected String RESOURCES = "prop.properties";
     protected String ALLCARS;
@@ -31,10 +32,10 @@ public abstract class AbstractService {
     protected String MOD_IMAGE;
     protected Dao dao;
     protected Dao moddao;
-    protected Car temp;
+    protected T temp;
     protected List<String> xpath;
     protected List<Function<Element, Boolean>> method;
-    protected Car last;
+    protected T last;
     protected List<String> existCars;
     protected List<String> existsModels;
     protected List<String> existsTypes;
@@ -42,6 +43,7 @@ public abstract class AbstractService {
     protected List<List<String>> exists;
     protected Document currentDoc;
     String IPs = "table > tbody > tr";
+    protected String ImagePath;
 
 
 
@@ -132,7 +134,7 @@ public abstract class AbstractService {
         currentDoc = doc;
         Elements elements = doc.select(xpath.get(idx));
         if (elements.isEmpty()) {
-            dao.save(new Car(temp));
+            dao.save(temp);
             if (idx < xpath.size() - 1) {
                 getAll(idx + 1);
             }
@@ -145,28 +147,7 @@ public abstract class AbstractService {
         }
     }
 
-    public void getModImage(){
-        if(!new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "")+"/"+ temp.getModel().replace("/", "") + ".png").exists()) {
-            Elements elements = currentDoc.select(MOD_IMAGE);
-            String imageMod = elements.attr("src");
-            System.out.println("================>inside   " + imageMod);
-            if (!"/static/images/nocars.png".equals(imageMod) && !imageMod.isEmpty()) {
-                try (InputStream in = saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + temp.getModel().replace("/", "") + ".png")){
-                } catch (FileNotFoundException ex) {
-                    try (InputStream in2 = saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getModel().replace("/", "") + ".png")){
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }
-    }
+
 
     public InputStream saveImage(String source, String dist) throws InterruptedException, MalformedURLException {
         if (!source.toUpperCase().contains("HTTP")) {

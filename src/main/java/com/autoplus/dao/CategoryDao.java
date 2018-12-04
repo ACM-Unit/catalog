@@ -31,7 +31,7 @@ public class CategoryDao implements Dao<Category> {
                     Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, category.getTitle());
             ps.setInt(2, category.getParent().getId());
-            ps.setString(3, category.getUrl());
+            ps.setString(3, category.getReference());
             int i = ps.executeUpdate();
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {

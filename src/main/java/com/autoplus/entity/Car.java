@@ -1,6 +1,6 @@
 package com.autoplus.entity;
 
-public class Car {
+public class Car implements Entity{
     private int id;
     private String brand;
     private String model;
