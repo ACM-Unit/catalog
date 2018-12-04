@@ -12,10 +12,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -78,8 +75,7 @@ public abstract class AbstractService {
         String line = null;
         StringBuffer tmp = new StringBuffer();
         System.out.println("============>" + url);
-        BufferedReader in = new BufferedReader(new InputStreamReader(getStream(url)));
-        try {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(getStream(url)))){
             while ((line = in.readLine()) != null) {
                 tmp.append(line);
             }
@@ -100,6 +96,8 @@ public abstract class AbstractService {
                 Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(s.getIp(), s.getPort())); // 139.255.40.130
                 uc = (HttpURLConnection) url.openConnection(proxy);
                 uc.setRequestProperty("Cookie", "catalog_page_size=50");
+                uc.setConnectTimeout(60 * 1000);
+                uc.setReadTimeout(60 * 1000);
                 uc.connect();
                 System.out.println("connect " + s.getIp() + ":" + s.getPort());
                 return uc.getInputStream();
@@ -153,11 +151,9 @@ public abstract class AbstractService {
             String imageMod = elements.attr("src");
             System.out.println("================>inside   " + imageMod);
             if (!"/static/images/nocars.png".equals(imageMod) && !imageMod.isEmpty()) {
-                try {
-                    saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + temp.getModel().replace("/", "") + ".png");
+                try (InputStream in = saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + temp.getModel().replace("/", "") + ".png")){
                 } catch (FileNotFoundException ex) {
-                    try {
-                        saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getModel().replace("/", "") + ".png");
+                    try (InputStream in2 = saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getModel().replace("/", "") + ".png")){
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     } catch (InterruptedException e1) {
@@ -172,18 +168,26 @@ public abstract class AbstractService {
         }
     }
 
-    public void saveImage(String source, String dist) throws IOException, InterruptedException {
+    public InputStream saveImage(String source, String dist) throws InterruptedException, MalformedURLException {
         if (!source.toUpperCase().contains("HTTP")) {
             source = SITE + source;
         }
         URL url = new URL(source);
-        Image img = ImageIO.read(getStream(url));
+        Image img = null;
+        InputStream in2 = null;
+        try (InputStream in = getStream(url)){
+            img = ImageIO.read(in);
         BufferedImage bi = (BufferedImage) img;
         if(bi!=null) {
             File f = new File(dist);
             ImageIO.write(bi, "png", f);
         }
+            in2 = in;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
+        return in2;
     }
 
 }
