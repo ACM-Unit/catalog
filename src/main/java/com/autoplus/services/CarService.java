@@ -1,28 +1,19 @@
 package com.autoplus.services;
 
 import com.autoplus.dao.CarDao;
-import com.autoplus.dao.Dao;
 import com.autoplus.dao.ModificationDao;
 import com.autoplus.entity.Car;
 import com.autoplus.entity.Modification;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import javax.imageio.ImageIO;
 import javax.sql.DataSource;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Function;
 
 
 public class CarService extends AbstractService {
@@ -40,6 +31,7 @@ public class CarService extends AbstractService {
         CARMODELS = prop.getProperty("carmodels-xpath");
         CARTYPE = prop.getProperty("cartype-xpath");
         MODIFICATION = prop.getProperty("modification-xpath");
+        MOD_IMAGE = prop.getProperty("mod-image-xpath");
         dao = new CarDao(ds);
         moddao = new ModificationDao(ds);
         last = (Car) dao.getLastObject();
@@ -65,17 +57,7 @@ public class CarService extends AbstractService {
     }
 
 
-    public void saveImage(String source, String dist) throws IOException, InterruptedException {
-        if (!source.toUpperCase().contains("HTTP")) {
-            source = SITE + source;
-        }
-        URL url = new URL(source);
-        Image img = ImageIO.read(getStream(url));
-        BufferedImage bi = (BufferedImage) img;
-        File f = new File(dist);
-        ImageIO.write(bi, "png", f);
 
-    }
 
 
     public void getAllCars() throws InterruptedException, IOException {
@@ -170,7 +152,7 @@ public class CarService extends AbstractService {
         String date = e.select("> td:eq(6)").text();
         String reference = e.attr("data-slug");
         Car tempCar = (Car) dao.getOne(temp.getBrand(), temp.getModel(), temp.getType());
-        if (last.equals(tempCar)) {
+        if (tempCar.equals(last)) {
             existModification = moddao.getLastModification(last.getId());
         } else {
             existModification = new ArrayList<>();
@@ -178,6 +160,9 @@ public class CarService extends AbstractService {
         if (!existModification.contains(name)) {
             System.out.println("+++"+tempCar +", " + name +", " + engineType +", " + engineModel +", " + engineCapacity +", " + power +", " + drive +", " + date +", " + reference);
             moddao.save(new Modification(tempCar, name, engineType, engineModel, engineCapacity, power, drive, date, reference));
+            if(temp.getType()==null) {
+                getModImage();
+            }
             return true;
         }
         return false;

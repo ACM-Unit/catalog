@@ -1,6 +1,5 @@
 package com.autoplus.services;
 
-import com.autoplus.App;
 import com.autoplus.dao.Dao;
 import com.autoplus.entity.Car;
 import com.autoplus.entity.Socket;
@@ -9,9 +8,17 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.function.Function;
 
 import static com.autoplus.Constants.CACHE_SOCKET;
@@ -24,6 +31,7 @@ public abstract class AbstractService {
     protected String CARMODELS;
     protected String CARTYPE;
     protected String MODIFICATION;
+    protected String MOD_IMAGE;
     protected Dao dao;
     protected Dao moddao;
     protected Car temp;
@@ -35,6 +43,7 @@ public abstract class AbstractService {
     protected List<String> existsTypes;
     protected List<String> existModification;
     protected List<List<String>> exists;
+    protected Document currentDoc;
     String IPs = "table > tbody > tr";
 
 
@@ -70,8 +79,13 @@ public abstract class AbstractService {
         StringBuffer tmp = new StringBuffer();
         System.out.println("============>" + url);
         BufferedReader in = new BufferedReader(new InputStreamReader(getStream(url)));
-        while ((line = in.readLine()) != null) {
-            tmp.append(line);
+        try {
+            while ((line = in.readLine()) != null) {
+                tmp.append(line);
+            }
+        }catch(IOException e){
+            CACHE_SOCKET = getRandomProxy();
+           return getHTML(url);
         }
         return tmp;
     }
@@ -117,10 +131,13 @@ public abstract class AbstractService {
 
     public void getAll(int idx) throws IOException, InterruptedException {
         Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + temp.getReference()))));
+        currentDoc = doc;
         Elements elements = doc.select(xpath.get(idx));
         if (elements.isEmpty()) {
             dao.save(new Car(temp));
-            if (idx < xpath.size() - 1) getAll(idx + 1);
+            if (idx < xpath.size() - 1) {
+                getAll(idx + 1);
+            }
         } else {
             for (int i = 0; i < elements.size(); i++) {
                 Element e = elements.get(i);
@@ -128,6 +145,45 @@ public abstract class AbstractService {
                 if (idx < xpath.size() - 1 && b) getAll(idx + 1);
             }
         }
+    }
+
+    public void getModImage(){
+        if(!new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "")+"/"+ temp.getModel().replace("/", "") + ".png").exists()) {
+            Elements elements = currentDoc.select(MOD_IMAGE);
+            String imageMod = elements.attr("src");
+            System.out.println("================>inside   " + imageMod);
+            if (!"/static/images/nocars.png".equals(imageMod) && !imageMod.isEmpty()) {
+                try {
+                    saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "") + "/" + temp.getModel().replace("/", "") + ".png");
+                } catch (FileNotFoundException ex) {
+                    try {
+                        saveImage(imageMod.contains("http") ? imageMod : SITE + imageMod, "C:/app/carmodels/" + temp.getModel().replace("/", "") + ".png");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void saveImage(String source, String dist) throws IOException, InterruptedException {
+        if (!source.toUpperCase().contains("HTTP")) {
+            source = SITE + source;
+        }
+        URL url = new URL(source);
+        Image img = ImageIO.read(getStream(url));
+        BufferedImage bi = (BufferedImage) img;
+        if(bi!=null) {
+            File f = new File(dist);
+            ImageIO.write(bi, "png", f);
+        }
+
     }
 
 }
