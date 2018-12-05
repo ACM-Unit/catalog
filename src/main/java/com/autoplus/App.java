@@ -2,9 +2,10 @@ package com.autoplus;
 
 import com.autoplus.dbConnection.ConnectionPool;
 import com.autoplus.services.CarService;
+import com.autoplus.services.CategoryService;
+
 import javax.sql.DataSource;
 import java.io.IOException;
-
 
 import static com.autoplus.Constants.CACHE_SOCKET;
 
@@ -13,6 +14,7 @@ public class App{
     private static DataSource dataSource;
     private static ConnectionPool jdbcObj;
     public static volatile CarService carService;
+    public static volatile CategoryService service;
 
     public static void main(String[] args) {
         jdbcObj = new ConnectionPool();
@@ -20,11 +22,12 @@ public class App{
             dataSource = jdbcObj.setUpPool();
             jdbcObj.printDbStatus();
             carService = new CarService(dataSource);
+            service = new CategoryService(dataSource);
             Thread t = new Thread(() -> {
                 while(true){
                     try {
                         Thread.sleep(120*1000);
-                        CACHE_SOCKET = carService.getRandomProxy();
+                        CACHE_SOCKET = service.getRandomProxy();
                         System.out.println("change socket: " + CACHE_SOCKET.getIp()+":"+CACHE_SOCKET.getPort());
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -35,7 +38,7 @@ public class App{
             });
             t.setDaemon(true);
             t.start();
-            carService.getAllCars();
+            service.getAllCategories();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {

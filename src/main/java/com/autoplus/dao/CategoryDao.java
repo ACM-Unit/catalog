@@ -4,6 +4,7 @@ import com.autoplus.entity.Category;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CategoryDao implements Dao<Category> {
@@ -15,7 +16,25 @@ public class CategoryDao implements Dao<Category> {
 
     @Override
     public List<Category> getAll() {
-        return null;
+        Connection connection = null;
+        List<Category> list = new ArrayList<>();
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("SELECT * FROM category c, category p where c.parent = p.id");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Category p = new Category(rs.getString("p.title"), rs.getString("p.reference"), null);
+                p.setId(rs.getInt("p.id"));
+                Category c = new Category(rs.getString("c.title"), rs.getString("c.reference"), p);
+                c.setId(rs.getInt("c.id"));
+                list.add(c);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(connection, null, null);
+        }
+        return list;
     }
 
     public CategoryDao(DataSource dataSource) {
@@ -27,11 +46,11 @@ public class CategoryDao implements Dao<Category> {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement("INSERT INTO autoplus.category (id, name, parent_id, reference) VALUES (NULL, ?, ?, ?)",
+            PreparedStatement ps = connection.prepareStatement("INSERT INTO autoplus.category (id, title, reference, parent) VALUES (NULL, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, category.getTitle());
-            ps.setInt(2, category.getParent().getId());
             ps.setString(3, category.getReference());
+            ps.setInt(2, category.getParent().getId());
             int i = ps.executeUpdate();
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
