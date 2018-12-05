@@ -70,13 +70,13 @@ public class CarService extends AbstractService<Car> {
         method.add((e) -> getModels(e));
         method.add((e) -> getType(e));
         method.add((e) -> getModification(e));
-        getAll(0);
+        getAll(0, "/cars/");
     }
 
 
 
 
-    public boolean getBrands(Element e) {
+    public String getBrands(Element e) {
         String brand = e.select("> span").text();
         System.out.println(brand);
         if (!existCars.contains(brand) || last.getBrand().equals(brand)) {
@@ -92,12 +92,12 @@ public class CarService extends AbstractService<Car> {
             temp.setReference(e.attr("href"));
             temp.setModel(null);
             temp.setType(null);
-            return true;
+            return e.attr("href");
         }
-        return false;
+        return null;
     }
 
-    public boolean getModels(Element e) {
+    public String getModels(Element e) {
         String model = e.text();
         if (!existCars.contains(temp.getBrand()) || (last.getBrand().equals(temp.getBrand()) && (!existsModels.contains(model) || last.getModel().equals(model)))) {
             new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + model.replace("/", "")).mkdir();
@@ -105,12 +105,12 @@ public class CarService extends AbstractService<Car> {
             temp.setModel(model);
             temp.setReference(e.attr("href"));
             temp.setType(null);
-            return true;
+            return e.attr("href");
         }
-        return false;
+        return null;
     }
 
-    public boolean getType(Element e) {
+    public String getType(Element e) {
         String year = e.select("> div > span").text();
         String type = e.select("> div").text().replace(e.select("> div > span").text(), "");
         System.out.println("++" + type);
@@ -137,11 +137,11 @@ public class CarService extends AbstractService<Car> {
                 }
             }
             dao.save(temp);
-            return true;
+            return e.attr("href");
         }
-        return false;
+        return null;
     }
-    public boolean getModification(Element e) {
+    public String getModification(Element e) {
         String name = e.select("> td:eq(0)").text();
         String engineType = e.select("> td:eq(1)").text();
         String engineModel = e.select("> td:eq(2)").text();
@@ -162,9 +162,9 @@ public class CarService extends AbstractService<Car> {
             if(temp.getType()==null) {
                 getModImage();
             }
-            return true;
+            return e.attr("data-slug");
         }
-        return false;
+        return null;
     }
     public void getModImage(){
         if(!new File("C:/app/carmodels/" + temp.getBrand().replace("/", "") + "/" + temp.getModel().replace("/", "")+"/"+ temp.getModel().replace("/", "") + ".png").exists()) {

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -37,22 +38,26 @@ public class CategoryService extends AbstractService<Category> {
         categories.forEach(c -> existCars.add(c.getReference()));
         xpath = new ArrayList<>();
         method = new ArrayList<>();
+        temp= new Category(null,"", null);
+        lastIndexes = dao.getLast();
     }
 
-    public boolean getCategories(Element e) {
+    public String getCategories(Element e) {
         if (!e.attr("href").isEmpty() && !existCars.contains(e.attr("href"))) {
             System.out.println(e.select("> div > a").text());
             System.out.println(SITE + e.attr("href"));
             Category c = new Category(e.text(), e.attr("href"), null);
+            new File("C:/app/categories/" +e.text()).mkdir();
             c = (Category) dao.save(c);
             parents.add(0, null);
             parents.add(1,c);
-            return true;
+            temp.setReference(e.attr("href"));
+            return e.attr("href");
         }
-        return false;
+        return null;
     }
 
-    public boolean getSubCategories(Element e) {
+    public String getSubCategories(Element e) {
         if (!e.attr("href").isEmpty() && !existCars.contains(e.attr("href"))) {
             String ref = e.attr("href");
             String title = e.select(".info > strong").text();
@@ -70,11 +75,11 @@ public class CategoryService extends AbstractService<Category> {
             Category c = new Category(title, ref, parents.get(1));
             c = (Category) dao.save(c);
             parents.add(2,c);
-            return true;
+            return ref;
         }
-        return false;
+        return null;
     }
-    public boolean getFinalCategories(Element e) {
+    public String getFinalCategories(Element e) {
         if (!e.attr("href").isEmpty() && !existCars.contains(e.attr("href"))) {
             String title = e.select(".info > strong").text();
             String ref = e.attr("href");
@@ -91,9 +96,9 @@ public class CategoryService extends AbstractService<Category> {
             }
             Category c = new Category(title, ref, parents.get(2));
             c = (Category) dao.save(c);
-            return true;
+            return null;
         }
-        return false;
+        return null;
     }
 
     public void getAllCategories() throws InterruptedException, IOException {
@@ -103,7 +108,7 @@ public class CategoryService extends AbstractService<Category> {
         method.add((e) -> getCategories(e));
         method.add((e) -> getSubCategories(e));
         method.add((e) -> getFinalCategories(e));
-        getAll(0);
+        getAll(0, "");
     }
 
     public void saveHTML(String ip, int port) throws IOException, InterruptedException {

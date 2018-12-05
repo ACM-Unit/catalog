@@ -49,8 +49,8 @@ public class CategoryDao implements Dao<Category> {
             PreparedStatement ps = connection.prepareStatement("INSERT INTO autoplus.category (id, title, reference, parent) VALUES (NULL, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, category.getTitle());
-            ps.setString(3, category.getReference());
-            ps.setInt(2, category.getParent().getId());
+            ps.setString(2, category.getReference());
+            ps.setObject(3, category.getParent()==null?null:category.getParent().getId());
             int i = ps.executeUpdate();
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
@@ -75,7 +75,27 @@ public class CategoryDao implements Dao<Category> {
 
     @Override
     public int[] getLast() {
-        return new int[0];
+        Connection connection = null;
+        int[] lastCar = new int[3];
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("select (select count(*) from category where parent is null) last_category,\n" +
+                    "                   (select count(*) from category where parent = (select id from category where parent is null order by id desc LIMIT 1)) last_subcategory,\n" +
+                    "                     (select count(*) from category where parent = (select id from category where parent = (select id from category where parent is null order by id desc LIMIT 1)  order by id desc LIMIT 1)) as last_final\n" +
+                    "                     from dual");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                lastCar[0] = rs.getInt("last_category")==0?0:rs.getInt("last_category")-1;
+                lastCar[1] = rs.getInt("last_subcategory")==0?0:rs.getInt("last_subcategory")-1;
+                lastCar[2] = rs.getInt("last_final")==0?0:rs.getInt("last_final")-1;
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(connection, null, null);
+        }
+        return lastCar;
     }
 
     @Override

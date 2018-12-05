@@ -15,8 +15,10 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.autoplus.Constants.CACHE_SOCKET;
@@ -34,7 +36,7 @@ public abstract class AbstractService<T extends Entity> {
     protected Dao moddao;
     protected T temp;
     protected List<String> xpath;
-    protected List<Function<Element, Boolean>> method;
+    protected List<Function<Element, String>> method;
     protected T last;
     protected List<String> existCars;
     protected List<String> existsModels;
@@ -42,6 +44,7 @@ public abstract class AbstractService<T extends Entity> {
     protected List<String> existModification;
     protected List<List<String>> exists;
     protected Document currentDoc;
+    protected int[] lastIndexes = {0,0,0};
     String IPs = "table > tbody > tr";
     protected String ImagePath;
 
@@ -129,20 +132,22 @@ public abstract class AbstractService<T extends Entity> {
         return tmp;
     }
 
-    public void getAll(int idx) throws IOException, InterruptedException {
-        Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + temp.getReference()))));
+    public void getAll(int idx, String ref) throws IOException, InterruptedException {
+        Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + ref))));
         currentDoc = doc;
         Elements elements = doc.select(xpath.get(idx));
         if (elements.isEmpty()) {
-            dao.save(temp);
+            if (temp != null) {
+                dao.save(temp);
+            }
             if (idx < xpath.size() - 1) {
-                getAll(idx + 1);
+                getAll(idx + 1, temp.getReference());
             }
         } else {
-            for (int i = 0; i < elements.size(); i++) {
+            for (int i = lastIndexes[idx]; i < elements.size(); i++) {
                 Element e = elements.get(i);
-                boolean b = method.get(idx).apply(e);
-                if (idx < xpath.size() - 1 && b) getAll(idx + 1);
+                String b = method.get(idx).apply(e);
+                if (idx < xpath.size() - 1 && b!=null) getAll(idx + 1, b);
             }
         }
     }
