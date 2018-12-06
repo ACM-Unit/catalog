@@ -5,19 +5,22 @@ import com.autoplus.services.CarService;
 import com.autoplus.services.CategoryService;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 
-import static com.autoplus.Constants.CACHE_SOCKET;
-
-public class App{
+public class App {
     private static final String ATTRIBUTE_NAME = "config";
     private static DataSource dataSource;
     private static ConnectionPool jdbcObj;
     public static volatile CarService carService;
     public static volatile CategoryService service;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         jdbcObj = new ConnectionPool();
+        dataSource = jdbcObj.setUpPool();
+        jdbcObj.printDbStatus();
+        service = new CategoryService(dataSource);
+        carService = new CarService(dataSource);
+        service.getScript();
+        /*jdbcObj = new ConnectionPool();
         try {
             dataSource = jdbcObj.setUpPool();
             jdbcObj.printDbStatus();
@@ -43,7 +46,7 @@ public class App{
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
 }

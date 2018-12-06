@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -61,17 +60,20 @@ public class CategoryService extends AbstractService<Category> {
         if (!e.attr("href").isEmpty() && !existCars.contains(e.attr("href"))) {
             String ref = e.attr("href");
             String title = e.select(".info > strong").text();
-            String img = e.select(".img > img").attr("src");
+            String img = e.select("div:eq(0) > span > img").attr("src");
             System.out.println(title);
             System.out.println(ref);
+            System.out.println(img);
+            System.out.println(e.html());
             new File("C:/app/categories/" +parents.get(1).getTitle()+"/"+ title.replace("/", "")).mkdir();
             try {
-                saveImage(img, "C:/app/categories/" +parents.get(1).getTitle()+"/"+ title.replace("/", "") + ".png");
+                saveImage(img, "C:/app/categories/" +parents.get(1).getTitle()+"/"+ title.replace("/", "") + ".jpg");
             } catch (IOException e1) {
                 e1.printStackTrace();
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
+            //*[@id="wrapper"]/div[1]/div[4]/div/div/div[2]/div/ul/li[2]/a/div[1]/span/img
             Category c = new Category(title, ref, parents.get(1));
             c = (Category) dao.save(c);
             parents.add(2,c);
@@ -83,12 +85,14 @@ public class CategoryService extends AbstractService<Category> {
         if (!e.attr("href").isEmpty() && !existCars.contains(e.attr("href"))) {
             String title = e.select(".info > strong").text();
             String ref = e.attr("href");
-            String img = e.select(".img > img").attr("src");
+            String img = e.select("div:eq(0) > span > img").attr("src");
             System.out.println(title);
             System.out.println(ref);
+            System.out.println(img);
+            System.out.println(e.html());
             new File("C:/app/categories/" +parents.get(1).getTitle()+"/"+parents.get(2).getTitle()+"/"+ title.replace("/", "")).mkdir();
             try {
-                saveImage(img, "C:/app/categories/" +parents.get(1).getTitle()+"/"+parents.get(2).getTitle()+"/"+ title.replace("/", "") + ".png");
+                saveImage(img, "C:/app/categories/" +parents.get(1).getTitle()+"/"+parents.get(2).getTitle()+"/"+ title.replace("/", "") + ".jpg");
             } catch (IOException e1) {
                 e1.printStackTrace();
             } catch (InterruptedException e1) {

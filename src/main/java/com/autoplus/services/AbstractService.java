@@ -1,9 +1,10 @@
 package com.autoplus.services;
 
 import com.autoplus.dao.Dao;
-import com.autoplus.entity.Car;
 import com.autoplus.entity.Entity;
 import com.autoplus.entity.Socket;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,10 +16,9 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.autoplus.Constants.CACHE_SOCKET;
@@ -69,7 +69,16 @@ public abstract class AbstractService<T extends Entity> {
         }
         SOCKETS = set;
     }
-
+public void getScript() throws IOException, InterruptedException {
+    Document doc = Jsoup.parse(String.valueOf(getHTML("index.json")));
+    String json = doc.body().data();
+    System.out.println(json);
+    Gson gson = new Gson();
+    JsonReader reader = new JsonReader(new FileReader("D:/MySites/catalog/src/main/resources/index.json"));
+    reader.setLenient(true);
+    Map<String, Object> asMap = gson.fromJson(reader, Map.class);
+    asMap.forEach((a,b) -> System.out.println(a+"="+b));
+}
     public Socket getRandomProxy() throws IOException {
         Random random = new Random();
         CACHE_SOCKET = SOCKETS.get(random.nextInt(SOCKETS.size()));
@@ -101,6 +110,7 @@ public abstract class AbstractService<T extends Entity> {
                 Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(s.getIp(), s.getPort())); // 139.255.40.130
                 uc = (HttpURLConnection) url.openConnection(proxy);
                 uc.setRequestProperty("Cookie", "catalog_page_size=50");
+                uc.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322; .NET CLR 1.2.30703)");
                 uc.setConnectTimeout(60 * 1000);
                 uc.setReadTimeout(60 * 1000);
                 uc.connect();
@@ -166,7 +176,7 @@ public abstract class AbstractService<T extends Entity> {
         BufferedImage bi = (BufferedImage) img;
         if(bi!=null) {
             File f = new File(dist);
-            ImageIO.write(bi, "png", f);
+            ImageIO.write(bi, "jpg", f);
         }
             in2 = in;
         } catch (IOException e) {
