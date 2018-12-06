@@ -68,7 +68,7 @@ public abstract class AbstractService<T extends Entity> {
         SOCKETS = set;
     }
 public void getScript() throws IOException, InterruptedException {
-    Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + "/datchiki-abs/"))));
+    Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + "/avtozapchasti/"))));
     String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
     System.out.println(json);
     System.out.println(JsonPath.read(json, "$.catalogueListSection.categories").toString());
