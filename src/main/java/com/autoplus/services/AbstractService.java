@@ -3,22 +3,20 @@ package com.autoplus.services;
 import com.autoplus.dao.Dao;
 import com.autoplus.entity.Entity;
 import com.autoplus.entity.Socket;
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
+import com.jayway.jsonpath.JsonPath;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.function.Function;
 
 import static com.autoplus.Constants.CACHE_SOCKET;
@@ -70,14 +68,11 @@ public abstract class AbstractService<T extends Entity> {
         SOCKETS = set;
     }
 public void getScript() throws IOException, InterruptedException {
-    Document doc = Jsoup.parse(String.valueOf(getHTML("index.json")));
-    String json = doc.body().data();
+    Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + "/datchiki-abs/"))));
+    String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
     System.out.println(json);
-    Gson gson = new Gson();
-    JsonReader reader = new JsonReader(new FileReader("D:/MySites/catalog/src/main/resources/index.json"));
-    reader.setLenient(true);
-    Map<String, Object> asMap = gson.fromJson(reader, Map.class);
-    asMap.forEach((a,b) -> System.out.println(a+"="+b));
+    System.out.println(JsonPath.read(json, "$.catalogueListSection.categories").toString());
+
 }
     public Socket getRandomProxy() throws IOException {
         Random random = new Random();
