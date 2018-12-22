@@ -3,7 +3,9 @@ package com.autoplus.services;
 import com.autoplus.dao.Dao;
 import com.autoplus.entity.Entity;
 import com.autoplus.entity.Socket;
+import com.google.gson.JsonArray;
 import com.jayway.jsonpath.JsonPath;
+import net.minidev.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -68,10 +70,11 @@ public abstract class AbstractService<T extends Entity> {
         SOCKETS = set;
     }
 public void getScript() throws IOException, InterruptedException {
-    Document doc = Jsoup.parse(String.valueOf(getHTML(new URL(SITE + "/avtozapchasti/"))));
+    Document doc = Jsoup.parse(String.valueOf(getHTML("abarth.html")));
     String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
     System.out.println(json);
-    System.out.println(JsonPath.read(json, "$.catalogueListSection.categories").toString());
+    JSONArray array = JsonPath.read(json, "$.unicat.modificationList");
+    array.forEach(m -> System.out.println(((LinkedHashMap)m).get("id").toString()+((LinkedHashMap)m).get("slug").toString()));
 
 }
     public Socket getRandomProxy() throws IOException {
