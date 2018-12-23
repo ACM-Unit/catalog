@@ -3,7 +3,6 @@ package com.autoplus.services;
 import com.autoplus.dao.Dao;
 import com.autoplus.entity.Entity;
 import com.autoplus.entity.Socket;
-import com.google.gson.JsonArray;
 import com.jayway.jsonpath.JsonPath;
 import net.minidev.json.JSONArray;
 import org.jsoup.Jsoup;
@@ -44,10 +43,9 @@ public abstract class AbstractService<T extends Entity> {
     protected List<String> existModification;
     protected List<List<String>> exists;
     protected Document currentDoc;
-    protected int[] lastIndexes = {0,0,0};
+    protected int[] lastIndexes = {0, 0, 0};
     String IPs = "table > tbody > tr";
     protected String ImagePath;
-
 
 
     public Socket getSocket() throws IOException {
@@ -58,7 +56,7 @@ public abstract class AbstractService<T extends Entity> {
 
     }
 
-    public void setProxies()throws IOException {
+    public void setProxies() throws IOException {
         List<Socket> set = new ArrayList<>();
         Document doc = Jsoup.parse(String.valueOf(getHTML("test.html")));
         Elements ips = doc.select(IPs);
@@ -69,14 +67,17 @@ public abstract class AbstractService<T extends Entity> {
         }
         SOCKETS = set;
     }
-public void getScript() throws IOException, InterruptedException {
-    Document doc = Jsoup.parse(String.valueOf(getHTML("abarth.html")));
-    String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
-    System.out.println(json);
-    JSONArray array = JsonPath.read(json, "$.unicat.modificationList");
-    array.forEach(m -> System.out.println(((LinkedHashMap)m).get("id").toString()+((LinkedHashMap)m).get("slug").toString()));
 
-}
+    public void getScript() throws IOException, InterruptedException {
+        Document doc = Jsoup.parse(String.valueOf(getHTML("abarth.html")));
+        String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
+        System.out.println(json);
+        JSONArray array = JsonPath.read(json, "$.unicat.modificationList");
+
+
+    }
+
+
     public Socket getRandomProxy() throws IOException {
         Random random = new Random();
         CACHE_SOCKET = SOCKETS.get(random.nextInt(SOCKETS.size()));
@@ -87,13 +88,13 @@ public void getScript() throws IOException, InterruptedException {
         String line = null;
         StringBuffer tmp = new StringBuffer();
         System.out.println("============>" + url);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(getStream(url)))){
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(getStream(url)))) {
             while ((line = in.readLine()) != null) {
                 tmp.append(line);
             }
-        }catch(IOException e){
+        } catch (IOException e) {
             CACHE_SOCKET = getRandomProxy();
-           return getHTML(url);
+            return getHTML(url);
         }
         return tmp;
     }
@@ -155,11 +156,10 @@ public void getScript() throws IOException, InterruptedException {
             for (int i = lastIndexes[idx]; i < elements.size(); i++) {
                 Element e = elements.get(i);
                 String b = method.get(idx).apply(e);
-                if (idx < xpath.size() - 1 && b!=null) getAll(idx + 1, b);
+                if (idx < xpath.size() - 1 && b != null) getAll(idx + 1, b);
             }
         }
     }
-
 
 
     public InputStream saveImage(String source, String dist) throws InterruptedException, MalformedURLException {
@@ -169,13 +169,13 @@ public void getScript() throws IOException, InterruptedException {
         URL url = new URL(source);
         Image img = null;
         InputStream in2 = null;
-        try (InputStream in = getStream(url)){
+        try (InputStream in = getStream(url)) {
             img = ImageIO.read(in);
-        BufferedImage bi = (BufferedImage) img;
-        if(bi!=null) {
-            File f = new File(dist);
-            ImageIO.write(bi, "jpg", f);
-        }
+            BufferedImage bi = (BufferedImage) img;
+            if (bi != null) {
+                File f = new File(dist);
+                ImageIO.write(bi, "jpg", f);
+            }
             in2 = in;
         } catch (IOException e) {
             e.printStackTrace();

@@ -4,6 +4,10 @@ import com.autoplus.dao.CarDao;
 import com.autoplus.dao.ModificationDao;
 import com.autoplus.entity.Car;
 import com.autoplus.entity.Modification;
+import com.jayway.jsonpath.JsonPath;
+import net.minidev.json.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -12,9 +16,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.net.URL;
+import java.util.*;
 
 
 public class CarService extends AbstractService<Car> {
@@ -158,7 +161,7 @@ public class CarService extends AbstractService<Car> {
         }
         if (!existModification.contains(name)) {
             System.out.println("+++"+tempCar +", " + name +", " + engineType +", " + engineModel +", " + engineCapacity +", " + power +", " + drive +", " + date +", " + reference);
-            moddao.save(new Modification(tempCar, name, engineType, engineModel, engineCapacity, power, drive, date, reference));
+            moddao.save(new Modification(tempCar, name, engineType, engineModel, engineCapacity, power, drive, date, reference, 0, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
             if(temp.getType()==null) {
                 getModImage();
             }
@@ -187,6 +190,50 @@ public class CarService extends AbstractService<Car> {
                 }
             }
         }
+    }
+    public void updateCarModify(URL url) throws IOException, InterruptedException {
+        Document doc = Jsoup.parse(String.valueOf(getHTML(url)));
+        String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
+        System.out.println(json);
+        JSONArray array = JsonPath.read(json, "$.unicat.modificationList");
+        array.forEach(m -> {
+            String ref = ((LinkedHashMap) m).get("slug").toString();
+            System.out.println(ref);
+            String[] params = new String[19];
+            params[0] = JsonPath.read(m, "$.id").toString();
+            params[1] = JsonPath.read(m, "$.description");
+            params[2] = JsonPath.read(m, "$.start_year");
+            params[3] = JsonPath.read(m, "$.end_year");
+            params[4] = JsonPath.read(m, "$.attributes.Body.BodyType.value");
+            params[5] = JsonPath.read(m, "$.attributes.Body.DriveType.value");
+            params[6] = JsonPath.read(m, "$.attributes.TechnicalData.Capacity.value");
+            params[7] = JsonPath.read(m, "$.attributes.TechnicalData.Capacity_Tax.value");
+            params[8] = JsonPath.read(m, "$.attributes.TechnicalData.Capacity_Technical.value");
+            params[9] = JsonPath.read(m, "$.attributes.TechnicalData.EngineType.value");
+            params[10] = JsonPath.read(m, "$.attributes.TechnicalData.FuelMixture.value");
+            params[11] = JsonPath.read(m, "$.attributes.TechnicalData.FuelType.value");
+            params[12] = JsonPath.read(m, "$.attributes.TechnicalData.NumberOfCylinders.value");
+            params[13] = JsonPath.read(m, "$.attributes.TechnicalData.NumberOfValves.value");
+            params[14] = JsonPath.read(m, "$.attributes.TechnicalData.Power.value");
+            params[15] = JsonPath.read(m, "$.attributes.General.ConstructionInterval.value");
+            params[16] = JsonPath.read(m, "$.attributes.Engine.EngineCode.value");
+            params[17] = JsonPath.read(m, "$.start_year_month");
+            params[18] = JsonPath.read(m, "$.end_year_month");
+            Arrays.asList(params).forEach(p -> System.out.println(p));
+            moddao.update(ref, params);
+        });
+    }
+    public void updateAll(){
+        List<Car> cars = dao.getAll();
+        cars.forEach(c ->{
+            try {
+                updateCarModify(new URL(SITE+c.getReference()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
 

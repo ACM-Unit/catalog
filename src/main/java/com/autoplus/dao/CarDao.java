@@ -102,7 +102,7 @@ public class CarDao implements Dao<Car> {
     }
 
     @Override
-    public void update(Car car, String[] params) {
+    public void update(String reference, String[] params) {
 
     }
 

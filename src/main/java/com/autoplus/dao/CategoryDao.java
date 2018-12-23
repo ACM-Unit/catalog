@@ -67,7 +67,7 @@ public class CategoryDao implements Dao<Category> {
         return category;
     }
     @Override
-    public void update(Category category, String[] params) {
+    public void update(String reference, String[] params) {
     }
     @Override
     public void delete(Category category) {

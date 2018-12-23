@@ -18,7 +18,7 @@ public interface Dao<T> {
 
     T save(T t);
 
-    void update(T t, String[] params);
+    void update(String reference, String[] params);
 
     void delete(T t);
     default void close(Connection connection, PreparedStatement stmt, ResultSet rs) {

@@ -19,7 +19,7 @@ public class App {
         jdbcObj.printDbStatus();
         service = new CategoryService(dataSource);
         carService = new CarService(dataSource);
-        service.getScript();
+        carService.updateAll();
         /*jdbcObj = new ConnectionPool();
         try {
             dataSource = jdbcObj.setUpPool();
