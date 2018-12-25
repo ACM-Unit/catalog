@@ -4,7 +4,9 @@ import com.autoplus.dao.CarDao;
 import com.autoplus.dao.ModificationDao;
 import com.autoplus.entity.Car;
 import com.autoplus.entity.Modification;
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 import net.minidev.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -195,36 +197,38 @@ public class CarService extends AbstractService<Car> {
         Document doc = Jsoup.parse(String.valueOf(getHTML(url)));
         String json = doc.body().data().replace("window.PRELOADED_STATE = ", "");
         System.out.println(json);
+        Configuration defconf = Configuration.defaultConfiguration();
+        Configuration conf = defconf.addOptions(Option.SUPPRESS_EXCEPTIONS);
         JSONArray array = JsonPath.read(json, "$.unicat.modificationList");
-        array.forEach(m -> {
+        array.forEach((Object m) -> {
             String ref = ((LinkedHashMap) m).get("slug").toString();
             System.out.println(ref);
             String[] params = new String[19];
-            params[0] = JsonPath.read(m, "$.id").toString();
-            params[1] = JsonPath.read(m, "$.description");
-            params[2] = JsonPath.read(m, "$.start_year");
-            params[3] = JsonPath.read(m, "$.end_year");
-            params[4] = JsonPath.read(m, "$.attributes.Body.BodyType.value");
-            params[5] = JsonPath.read(m, "$.attributes.Body.DriveType.value");
-            params[6] = JsonPath.read(m, "$.attributes.TechnicalData.Capacity.value");
-            params[7] = JsonPath.read(m, "$.attributes.TechnicalData.Capacity_Tax.value");
-            params[8] = JsonPath.read(m, "$.attributes.TechnicalData.Capacity_Technical.value");
-            params[9] = JsonPath.read(m, "$.attributes.TechnicalData.EngineType.value");
-            params[10] = JsonPath.read(m, "$.attributes.TechnicalData.FuelMixture.value");
-            params[11] = JsonPath.read(m, "$.attributes.TechnicalData.FuelType.value");
-            params[12] = JsonPath.read(m, "$.attributes.TechnicalData.NumberOfCylinders.value");
-            params[13] = JsonPath.read(m, "$.attributes.TechnicalData.NumberOfValves.value");
-            params[14] = JsonPath.read(m, "$.attributes.TechnicalData.Power.value");
-            params[15] = JsonPath.read(m, "$.attributes.General.ConstructionInterval.value");
-            params[16] = JsonPath.read(m, "$.attributes.Engine.EngineCode.value");
-            params[17] = JsonPath.read(m, "$.start_year_month");
-            params[18] = JsonPath.read(m, "$.end_year_month");
+            params[0] = JsonPath.using(conf).parse(m).read("$.id").toString();
+            params[1] = JsonPath.using(conf).parse(m).read("$.description");
+            params[2] = JsonPath.using(conf).parse(m).read("$.start_year");
+            params[3] = JsonPath.using(conf).parse(m).read("$.end_year");
+            params[4] = JsonPath.using(conf).parse(m).read("$.attributes.Body.BodyType.value");
+            params[5] = JsonPath.using(conf).parse(m).read("$.attributes.Body.DriveType.value");
+            params[6] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.Capacity.value");
+            params[7] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.Capacity_Tax.value");
+            params[8] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.Capacity_Technical.value");
+            params[9] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.EngineType.value");
+            params[10] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.FuelMixture.value");
+            params[11] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.FuelType.value");
+            params[12] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.NumberOfCylinders.value");
+            params[13] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.NumberOfValves.value");
+            params[14] = JsonPath.using(conf).parse(m).read("$.attributes.TechnicalData.Power.value");
+            params[15] = JsonPath.using(conf).parse(m).read("$.attributes.General.ConstructionInterval.value");
+            params[16] = JsonPath.using(conf).parse(m).read("$.attributes.Engine.EngineCode.value");
+            params[17] = JsonPath.using(conf).parse(m).read("$.start_year_month");
+            params[18] = JsonPath.using(conf).parse(m).read("$.end_year_month");
             Arrays.asList(params).forEach(p -> System.out.println(p));
             moddao.update(ref, params);
         });
     }
     public void updateAll(){
-        List<Car> cars = dao.getAll();
+        List<Car> cars = dao.getAllExceptFilled();
         cars.forEach(c ->{
             try {
                 updateCarModify(new URL(SITE+c.getReference()));

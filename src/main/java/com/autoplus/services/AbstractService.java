@@ -104,7 +104,7 @@ public abstract class AbstractService<T extends Entity> {
         int count = 0;
         HttpURLConnection uc = null;
         while (count < 3) {
-            Thread.sleep(2000);
+           // Thread.sleep(2000);
             try {
                 Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(s.getIp(), s.getPort())); // 139.255.40.130
                 uc = (HttpURLConnection) url.openConnection(proxy);

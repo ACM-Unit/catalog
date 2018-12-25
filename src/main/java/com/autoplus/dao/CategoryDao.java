@@ -37,6 +37,11 @@ public class CategoryDao implements Dao<Category> {
         return list;
     }
 
+    @Override
+    public List<Category> getAllExceptFilled() {
+        return null;
+    }
+
     public CategoryDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }

@@ -68,6 +68,24 @@ public class CarDao implements Dao<Car> {
         }
         return cars;
     }
+    public List<Car> getAllExceptFilled() {
+        Connection connection = null;
+        List<Car> cars = new ArrayList<>();
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement("select distinct c.* from car c, modification m where m.parent = c.id and m.id is null");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Car car = new Car(rs.getString("brand"), rs.getString("model"), rs.getString("type"), rs.getString("reference"), rs.getString("year"));
+                cars.add(car);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(connection, null, null);
+        }
+        return cars;
+    }
 
     @Override
     public Car save(Car car) {

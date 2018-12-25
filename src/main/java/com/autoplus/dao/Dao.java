@@ -16,6 +16,8 @@ public interface Dao<T> {
 
     List<T> getAll();
 
+    List<T> getAllExceptFilled();
+
     T save(T t);
 
     void update(String reference, String[] params);

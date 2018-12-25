@@ -49,6 +49,11 @@ public class ModificationDao implements Dao<Modification> {
     }
 
     @Override
+    public List<Modification> getAllExceptFilled() {
+        return null;
+    }
+
+    @Override
     public Modification save(Modification modification) {
         Connection connection = null;
         try {
